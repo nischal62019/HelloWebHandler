@@ -1,0 +1,218 @@
+##########################################################################
+##                                                                      ##
+##        Copyright (c) 1998-2016 by Progress Software Corporation      ##
+##                                                                      ##
+## All rights reserved.  No part of this program or document may be     ##
+## reproduced in any form or by any means without permission in writing ##
+## from Progress Software Corporation.                                  ##
+##                                                                      ##
+##########################################################################
+ 
+---------------------- oeablSecurity.properties.README -------------------------
+This file describes the properties that you can define in the oeablSecurity.properties
+file.  The components you can configure in this file are:
+	Filters : PreAuthentication filters, CORS filters & OE Client Principle filters
+			  and its properties as per production requirement for transports.
+	
+	Authentication Provider: Able to configure authentication provider and its properties 
+			separately for transports as per production need.
+	
+---------------------------------------------------------------------------
+This property file is broadly divided into following sections
+	
+		Section Name					          Description
+		============                              ===========
+		Default Filter Configuration       This is the common section for all the transports. Which contains the filter beans and its properties	
+										   with its default values, format <filter_bean_id>.<property_name>=<property_value>. If there is a need
+										   of any filter property applicable to all the transport should be defined in this section.
+		
+		
+		Default Authentication Providers   Configuration for default authentication provider beans
+										   and its properties format <authz_bean_id>.<property_name>=<property_value>.
+										   As the authentication provider is different for different security mode that is configured, for this
+										   this section again divided into following sub-sections like
+												- basic
+												- ldap
+												- oerealm
+												- container
+		
+		APSV Transport Specific            APSV transport specific filter & authentication provider bean configuration should be there.
+										   Property format should be start with apsv prefix like apsv.<bean_id>.<property_name>=<property_value>
+										   The default configuration of apsv transport should always refer the properties for common sections for
+										   filter & authentication providers. Any transport specific configuration should be defined in this section.
+		
+		SOAP Transport Specific 		   SOAP transport specific filter & authentication provider bean configuration should be there.
+										   Property format should be start with soap prefix like soap.<bean_id>.<property_name>=<property_value>
+										   The default configuration of soap transport should always refer the properties for common sections for
+										   filter & authentication providers. Any transport specific configuration should be defined in this section.
+		
+		
+		REST Transport Specific 		   REST transport specific filter & authentication provider bean configuration should be there.
+										   Property format should be start with REST prefix like rest.<bean_id>.<property_name>=<property_value>
+										   The default configuration of REST transport should always refer the properties for common sections for
+										   filter & authentication providers. Any transport specific configuration should be defined in this section.
+		
+		WEB Transport Specific 		       WEB transport specific filter & authentication provider bean configuration should be there.
+										   Property format should be start with WEB prefix like web.<bean_id>.<property_name>=<property_value>
+										   The default configuration of web transport should always refer the properties for common sections for
+										   filter & authentication providers. Any transport specific configuration should be defined in this section.
+		
+---------------------------------------------------------------------------
+		
+		
+##########################################################################
+##                                                                      ##
+##        Default Filter Configuration.                                 ##
+##                                                                      ##
+##########################################################################
+		
+	OEPreauthfilter.enabled=false
+		As per default configuration pre authentication filter should be in disable state. 
+		Changing value to true (OEPreauthfilter.enabled=true) enabled pre authentication filter for all the transport.
+		
+		If there is a production need to enable pre authentication filter for any specific transport, then this property should
+		be define in specific section and separate pre authentication bean should be configured in the security xml file.
+		Example:
+			Bean definition
+			---------------
+			<b:bean id="RESTOEPreauthfilter" 
+            class="com.progress.appserv.services.security.OERequestHeaderAuthenticationFilter">
+                    <b:property name="enabled" value="${rest.OEPreauthfilter.enabled}"/> 
+					<b:property name="key" value=""/>     
+					<b:property name="registryFile" value= ""/>
+					<b:property name="encoding" value="OECP"/> 
+					<b:property name="headername" value="X-OE-CLIENT-CONTEXT-ID"/>  
+					<b:property name="authenticationManager" ref="authenticationManager" />
+			</b:bean>
+		
+			HTTP filter 
+			-----------
+			<http pattern="/web/**"
+				auto-config="true" 
+				use-expressions="true" 
+				create-session="stateless" 
+				disable-url-rewriting="true" 
+				authentication-manager-ref="${local.http.authManagerRef}" 
+				realm="OpenEdge" >
+
+				<!-- OpenEdge PRE AUTH Filter  -->
+				<custom-filter position="PRE_AUTH_FILTER" 
+						ref="RESTOEPreauthfilter" />
+				
+				......
+			</http>
+		
+			oeablSecurity.properties (APSV Transport Specific)
+			------------------------
+			rest.OEPreauthfilter.enabled=true
+	
+	
+	OEClientPrincipalFilter.enabled=true
+		OEClientPrincipleFilter is the default filter for session management, which is enabled by default for all the transports for 
+		selected security modes. Changing value of OEClientPrincipalFilter.enabled=false, results session management filter disable
+		for all the transports (this is the default configuration behaviour).
+		
+		Like pre authentication filter user could enabled or disabled OEClientPrincipleFilter for any specific transport by defining a separate bean
+		and separate property in the configuration xml file.
+		
+		Example:
+			Bean definition
+			---------------
+			<b:bean id="SOAPOEClientPrincipalFilter"
+				class="com.progress.appserv.services.security.OEClientPrincipalFilter" >
+					<b:property name="enablecp" value="${soap.OEClientPrincipalFilter.enabled}" />
+					.....
+			</b:bean>
+		
+			HTTP filter 
+			-----------
+			<http pattern="/soap/**"
+				auto-config="true" 
+				use-expressions="true" 
+				create-session="stateless" 
+				disable-url-rewriting="true" 
+				authentication-manager-ref="${local.http.authManagerRef}" 
+				realm="OpenEdge" >
+
+				<!-- OpenEdge ClientPrincipal SSO Filter -->
+				<custom-filter after="SESSION_MANAGEMENT_FILTER" 
+                       ref="SOAPOEClientPrincipalFilter" />
+				
+				......
+			</http>
+			
+			oeablSecurity.properties (SOAP Transport Specific)
+			------------------------
+			soap.OEClientPrincipalFilter.enabled=true
+	
+	OECORSFilter.allowAll=true
+		OECORSFilter is the default security context filter and by default enabled. Anything change in property value will be applicable for all the 
+		transports. 
+		
+		It could be manage just like OEClientPrincipalFilter & OEPreauthfilter.
+	
+	
+##########################################################################
+##                                                                      ##
+##        Default Authentication Configuration                          ##
+##                                                                      ##
+##########################################################################
+		
+	This is the section which manages the authentication provider bean properties. Authentication provider like:
+		- basic
+		- ldap
+		- oerealm
+		- container
+	are managed in this section.
+	
+	oeablApplicationAuthBasic.authManagerRef=oeablApplicationAuth
+		When basic authentication type is selected (i.e. basic-local & form-local) then this property manages authentication provider for all the transports.
+		Each transport could have separate authentication provider as per the production requirement (of type basic).
+
+		Example:
+			Suppose there is requirement to use basic authentication provider other than default, using different user service such as web.users.properties
+			for web. Then user/admin needs to define separate authentication and manage that bean using separate property something like
+			
+			 <http pattern="/web/**"
+				auto-config="true" 
+				use-expressions="true" 
+				create-session="stateless" 
+				disable-url-rewriting="true" 
+				authentication-manager-ref="${web.oeablApplicationAuthBasic.authManagerRef}" 
+				realm="OpenEdge" >
+				......
+			</http>
+			
+			bean definition:
+			
+			 <authentication-manager id="webOeablApplicationAuth" >
+				<authentication-provider>
+					<user-service properties="/WEB-INF/web.users.properties" />
+				</authentication-provider>
+			</authentication-manager>
+		
+			oeablSecurity.properties (web section)
+			--------------------------
+			
+			web.oeablApplicationAuthBasic.authManagerRef=webOeablApplicationAuth
+	
+	Same steps should be followed when there is a requirement to change default authentication provider for any transport.
+	
+	
+			
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+	

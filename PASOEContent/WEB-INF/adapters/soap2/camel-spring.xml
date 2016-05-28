@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xmlns:cxf="http://camel.apache.org/schema/cxf"
+       xmlns:jaxrs="http://cxf.apache.org/jaxrs" 
+       xmlns:prgrs="http://www.progress.com/caf/camel/component/prgrs" 
+       xmlns:cafBinding="http://www.progress.com/caf/binding/strategy"
+       xmlns:AppServer="urn:schemas-progress-com:bpm:appserverbean:0001"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd 
+       http://www.progress.com/caf/camel/component/prgrs http://www.progress.com/caf/camel/component/prgrs/schemas/prgrs.xsd 
+       http://www.progress.com/caf/binding/strategy http://www.progress.com/caf/binding/cafBinding.xsd
+       http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd 
+       http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+       urn:schemas-progress-com:bpm:appserverbean:0001 http://www.progress.com/appserverbean0001.xsd">
+ 
+ 	 <import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
+ 	 
+    <bean id="cxfSOAP" class="com.progress.appserv.adapters.camel.soap.ExchangeSOAPProcessor"/> 
+ 
+    <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+		<onException>
+			<exception>com.progress.appserv.adapters.camel.soap.CamelSOAPException</exception>
+			<!-- redeliveryPolicy maximumRedeliveries="1" / -->
+			<handled>
+				<constant>true</constant>
+			</handled>
+			<bean ref="cxfSOAP" method="requestFailed" />
+			<to uri="log:output"/>
+		</onException>
+ 
+		<route>
+			<from uri="servlet:///?servletName=CamelSOAPServlet"/>
+				<bean ref="cxfSOAP" method="parseSoap"/>
+			<to uri="CamelSOAPAblComponent://CamelSOAPAblEndpoint"/>
+				<bean ref="cxfSOAP" method="getResult"/>
+			<to uri="log:output"/>
+		</route>
+    </camelContext>
+    
+
+</beans>
