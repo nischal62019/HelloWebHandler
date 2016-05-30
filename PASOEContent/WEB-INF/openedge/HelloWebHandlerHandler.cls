@@ -76,15 +76,15 @@ CLASS HelloWebHandlerHandler INHERITS WebHandler:
         /* This body object can be a string or something else (JsonObject for instance) */               
         ASSIGN 
             oBody = NEW OpenEdge.Core.String(
-                             'Hello prawat'
-                           + '~r~n':u   /*CRLF */
-                           + 'This message was returned by HandleGet in HelloWebHandlerHandler.'
+                             '<center><h1>Hello Progress! We are on Cloud!</h1>'
+                           + '<br/>':u   /*CRLF */
+                           + '<h2>Powered by Eclipse Che, Driven by OpenEdge</h2></center>'
                            ).
         
         ASSIGN 
             oResponse:Entity        = oBody
             /* HTTP messages require a content type */
-            oResponse:ContentType   = 'text/plain':u
+            oResponse:ContentType   = 'text/html':u
             /* ContentLength is good too */
             oResponse:ContentLength = oBody:Size
             .
